@@ -34,6 +34,7 @@ for dir in os.listdir('./edited/'):
 	for file in glob.glob('./edited/'+dir+'/*.wav'):
 		w=wave.open(file, mode='rb')
 		sound=np.frombuffer(w.readframes(w.getnframes()), dtype='int16')
+		sound=abs(np.fft.fft(sound))
 		sound=(sound-sound.mean())/sound.std()
 		if flag:
 			index=random.randint(0, len(train))
@@ -58,7 +59,7 @@ optimizer = optim.SGD(net.parameters(), lr=0.01)
 
 data_start=0
 batch_size=50
-for epoch in range(1000):
+for epoch in range(500):
 	input=torch.from_numpy(train[data_start*batch_size:(data_start+1)*batch_size])
 	target=torch.from_numpy(train_answer[data_start*batch_size:(data_start+1)*batch_size])
 	data_start+=1
@@ -72,6 +73,14 @@ for epoch in range(1000):
 	print(loss.item())
 
 infer_data=net(torch.from_numpy(test))
-infer_label=torch.argmax(infer_data, dim=1)
-accuracy=infer_label.numpy()-test_answer==0
+infer_label=torch.argmax(infer_data, dim=1).numpy()
+accuracy=infer_label-test_answer==0
+print('----------')
 print(np.sum(accuracy)/len(accuracy))
+correct=np.zeros(27)
+all=np.zeros(27)
+for i in range(len(test_answer)):
+	all[test_answer[i]]+=1
+	if infer_label[i]==test_answer[i]:
+		correct[test_answer[i]]+=1
+print(correct/all)
